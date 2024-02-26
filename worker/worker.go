@@ -101,3 +101,7 @@ func (w *Worker) StopTask(ctx context.Context, t task.Task) task.Result {
 	w.logger.Printf("stopped and removed container %v for task %v\n", t.ContainerID, t.ID)
 	return result
 }
+
+func (w *Worker) GetTasks() map[uuid.UUID]*task.Task {
+	return w.Db
+}
