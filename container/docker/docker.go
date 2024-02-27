@@ -70,10 +70,24 @@ func NewDocker(cfg *Config) (*Docker, error) {
 		return nil, fmt.Errorf("error creating a new docker client: %w", err)
 	}
 
-	return &Docker{
+	d := &Docker{
 		Client: c,
 		Config: cfg,
-	}, nil
+	}
+
+	return d, d.validate()
+}
+
+func (d *Docker) validate() error {
+	if d.Config == nil {
+		return fmt.Errorf("config is nil")
+	}
+
+	if d.Client == nil {
+		return fmt.Errorf("docker client is nil")
+	}
+
+	return nil
 }
 
 func (d *Docker) Run(ctx context.Context) task.Result {
