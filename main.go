@@ -32,6 +32,7 @@ func main() {
 		Address: host,
 		Port:    port,
 		Worker:  w,
+		Logger:  logger,
 	}
 
 	go runTasks(context.TODO(), logger, w)

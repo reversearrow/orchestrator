@@ -16,7 +16,7 @@ type Api struct {
 	Port    int
 	Worker  *Worker
 	Router  *chi.Mux
-	Logger  log.Logger
+	Logger  *log.Logger
 }
 
 type ErrorResponse struct {
