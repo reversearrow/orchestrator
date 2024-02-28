@@ -81,7 +81,7 @@ func (a *Api) StopTask(w http.ResponseWriter, r *http.Request) {
 
 	taskToStop := a.Worker.Db[tID]
 	taskCopy := *taskToStop
-	taskCopy.State = task.Completed
+	taskCopy.State = task.Running
 	a.Worker.AddTask(r.Context(), taskCopy)
 	log.Printf("added task :%v to stop container: %v\n", taskToStop.ID, taskToStop.ContainerID)
 	w.WriteHeader(http.StatusNoContent)
