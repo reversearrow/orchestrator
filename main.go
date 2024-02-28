@@ -24,10 +24,12 @@ func main() {
 		return
 	}
 
-	w := &worker.Worker{
-		Queue: *queue.New(),
-		Db:    make(map[uuid.UUID]*task.Task),
+	w, err := worker.NewWorker(logger, queue.New(), make(map[uuid.UUID]*task.Task))
+	if err != nil {
+		logger.Printf("error creating a new worker: %v", err)
+		os.Exit(1)
 	}
+
 	api := worker.Api{
 		Address: host,
 		Port:    port,

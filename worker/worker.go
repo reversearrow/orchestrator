@@ -18,7 +18,29 @@ type Worker struct {
 	Queue     queue.Queue
 	Db        map[uuid.UUID]*task.Task
 	TaskCount int
-	logger    log.Logger
+	Logger    *log.Logger
+}
+
+func NewWorker(logger *log.Logger, queue *queue.Queue, db map[uuid.UUID]*task.Task) (*Worker, error) {
+	w := &Worker{
+		Queue:  *queue,
+		Db:     db,
+		Logger: logger,
+	}
+
+	return w, w.validate()
+}
+
+func (w *Worker) validate() error {
+	if w.Db == nil {
+		return fmt.Errorf("worker: db is nil")
+	}
+
+	if w.Logger == nil {
+		return fmt.Errorf("worker: logger is nil")
+	}
+
+	return nil
 }
 
 func (w *Worker) CollectStats() {
@@ -32,7 +54,7 @@ func (w *Worker) AddTask(ctx context.Context, t task.Task) {
 func (w *Worker) RunTask(ctx context.Context) task.Result {
 	t := w.Queue.Dequeue()
 	if t == nil {
-		w.logger.Printf("no tasks in queue")
+		w.Logger.Printf("no tasks in queue")
 		return task.Result{Error: nil}
 	}
 
@@ -71,7 +93,7 @@ func (w *Worker) StartTask(ctx context.Context, t task.Task) task.Result {
 	}
 	result := d.Run(ctx)
 	if result.Error != nil {
-		w.logger.Printf("error starting the task: %v", result.Error)
+		w.Logger.Printf("error starting the task: %v", result.Error)
 		t.State = task.Failed
 		w.Db[t.ID] = &t
 		return result
@@ -98,7 +120,7 @@ func (w *Worker) StopTask(ctx context.Context, t task.Task) task.Result {
 	t.FinishTime = time.Now().UTC()
 	t.State = task.Completed
 	w.Db[t.ID] = &t
-	w.logger.Printf("stopped and removed container %v for task %v\n", t.ContainerID, t.ID)
+	w.Logger.Printf("stopped and removed container %v for task %v\n", t.ContainerID, t.ID)
 	return result
 }
 
