@@ -70,7 +70,7 @@ func (w *Worker) RunTask(ctx context.Context) task.Result {
 		switch taskQueued.State {
 		case task.Scheduled:
 			result = w.StartTask(ctx, taskQueued)
-		case task.Running:
+		case task.Completed:
 			result = w.StopTask(ctx, taskQueued)
 		default:
 			result.Error = errors.New("we should not get here")
