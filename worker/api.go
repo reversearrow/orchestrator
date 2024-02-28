@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -98,7 +101,17 @@ func (a *Api) initRouter() {
 func (a *Api) Start() {
 	a.initRouter()
 	a.Logger.Printf("attempting to start the server: %s:%d\n", a.Address, a.Port)
-	if err := http.ListenAndServe(fmt.Sprintf("%s:%d", a.Address, a.Port), a.Router); err != nil {
-		a.Logger.Printf("failed to start the worker api: %v", err)
-	}
+
+	go func() {
+		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", a.Address, a.Port), a.Router); err != nil {
+			a.Logger.Printf("failed to start the worker api: %v", err)
+		}
+	}()
+
+	a.Logger.Printf("server started on %s:%d\n", a.Address, a.Port)
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-shutdown
+
+	a.Logger.Printf("shutdown signal received: %v", sig)
 }
