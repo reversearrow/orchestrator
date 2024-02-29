@@ -44,7 +44,7 @@ func (a *Api) StartTask(w http.ResponseWriter, r *http.Request) {
 	}
 
 	a.Worker.AddTask(r.Context(), te.Task)
-	log.Printf("added task: %v\n", te.Task.ID)
+	a.Logger.Printf("added task: %v\n", te.Task.ID)
 	if err := json.NewEncoder(w).Encode(te.Task); err != nil {
 		log.Printf("error encoding task: %v\n", err)
 		return
@@ -83,7 +83,7 @@ func (a *Api) StopTask(w http.ResponseWriter, r *http.Request) {
 	taskCopy := *taskToStop
 	taskCopy.State = task.Completed
 	a.Worker.AddTask(r.Context(), taskCopy)
-	log.Printf("added task :%v to stop container: %v\n", taskToStop.ID, taskToStop.ContainerID)
+	a.Logger.Printf("added task :%v to stop container: %v\n", taskToStop.ID, taskToStop.ContainerID)
 	w.WriteHeader(http.StatusNoContent)
 }
 
