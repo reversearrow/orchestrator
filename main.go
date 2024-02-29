@@ -47,14 +47,14 @@ func runTasks(ctx context.Context, logger *log.Logger, w *worker.Worker) {
 
 	for {
 		if w.Queue.Len() == 0 {
-			log.Println("no available tasks to run, sleeping for 10 seconds")
+			logger.Println("no available tasks to run, sleeping for 10 seconds")
 			time.Sleep(sleep)
 			continue
 		}
 
 		result := w.RunTask(ctx)
 		if result.Error != nil {
-			log.Printf("error running tasks: %v\n", result.Error)
+			logger.Printf("error running tasks: %v\n", result.Error)
 		}
 	}
 }
