@@ -11,6 +11,16 @@ type Stats struct {
 	DiskStats *linux.Disk
 	CpuStats  *linux.CPUStat
 	LoadStats *linux.LoadAvg
+	TaskCount int
+}
+
+func GetStats(l *log.Logger) *Stats {
+	return &Stats{
+		MemStats:  GetMemoryInfo(l),
+		DiskStats: GetDiskInfo(l),
+		CpuStats:  GetCpuStats(l),
+		LoadStats: GetLoadAvg(l),
+	}
 }
 
 func (s *Stats) MemTotalKb() uint64 {
@@ -56,10 +66,6 @@ func (s *Stats) CpuUsage() float64 {
 	return (float64(total) - float64(idle)) / float64(total)
 }
 
-func GetStats() *Stats {
-	return &Stats{}
-}
-
 func GetMemoryInfo(log *log.Logger) *linux.MemInfo {
 	memStats, err := linux.ReadMemInfo("/proc/meminfo")
 	if err != nil {
@@ -77,4 +83,23 @@ func GetDiskInfo(log *log.Logger) *linux.Disk {
 		return &linux.Disk{}
 	}
 	return diskStats
+}
+
+func GetCpuStats(log *log.Logger) *linux.CPUStat {
+	stats, err := linux.ReadStat("/proc/stat")
+	if err != nil {
+		log.Printf("error reading from /proc/stat: %v", err)
+		return &linux.CPUStat{}
+	}
+	return &stats.CPUStatAll
+}
+
+func GetLoadAvg(log *log.Logger) *linux.LoadAvg {
+	loadAvg, err := linux.ReadLoadAvg("/proc/loadavg")
+	if err != nil {
+		log.Printf("error reading from /proc/loadavg")
+		return &linux.LoadAvg{}
+	}
+
+	return loadAvg
 }

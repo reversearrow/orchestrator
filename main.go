@@ -38,6 +38,7 @@ func main() {
 	}
 
 	go runTasks(context.TODO(), logger, w)
+	go w.CollectStats()
 
 	api.Start()
 }

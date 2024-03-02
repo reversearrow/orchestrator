@@ -19,6 +19,7 @@ type Worker struct {
 	Db        map[uuid.UUID]*task.Task
 	TaskCount int
 	Logger    *log.Logger
+	Stats     *Stats
 }
 
 func NewWorker(logger *log.Logger, queue *queue.Queue, db map[uuid.UUID]*task.Task) (*Worker, error) {
@@ -44,7 +45,12 @@ func (w *Worker) validate() error {
 }
 
 func (w *Worker) CollectStats() {
-	fmt.Println("I will collect stats")
+	for {
+		w.Logger.Println("collecting system stats")
+		w.Stats = GetStats(w.Logger)
+		w.Stats.TaskCount = w.TaskCount
+		time.Sleep(time.Second * 15)
+	}
 }
 
 func (w *Worker) AddTask(ctx context.Context, t task.Task) {
