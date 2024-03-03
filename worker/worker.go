@@ -57,7 +57,7 @@ func (w *Worker) AddTask(ctx context.Context, t task.Task) {
 	w.Queue.Enqueue(t)
 }
 
-func (w *Worker) RunTask(ctx context.Context) task.Result {
+func (w *Worker) runTask(ctx context.Context) task.Result {
 	t := w.Queue.Dequeue()
 	if t == nil {
 		w.Logger.Printf("no tasks in queue")
@@ -130,6 +130,27 @@ func (w *Worker) StopTask(ctx context.Context, t task.Task) task.Result {
 	return result
 }
 
-func (w *Worker) GetTasks() map[uuid.UUID]*task.Task {
-	return w.Db
+func (w *Worker) GetTasks() []*task.Task {
+	tasks := make([]*task.Task, 0, len(w.Db))
+	for _, t := range tasks {
+		tasks = append(tasks, t)
+	}
+	return tasks
+}
+
+func (w *Worker) RunTasks(ctx context.Context, logger *log.Logger) {
+	const sleep = time.Second * 10
+
+	for {
+		if w.Queue.Len() == 0 {
+			logger.Println("no available tasks to run, sleeping for 10 seconds")
+			time.Sleep(sleep)
+			continue
+		}
+
+		result := w.runTask(ctx)
+		if result.Error != nil {
+			logger.Printf("error running tasks: %v\n", result.Error)
+		}
+	}
 }

@@ -6,7 +6,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/golang-collections/collections/queue"
@@ -19,10 +21,10 @@ import (
 func main() {
 	logger := log.New(os.Stdout, "cube-service: ", log.LstdFlags)
 
-	host := os.Getenv("CUBE_HOST")
-	port, err := strconv.Atoi(os.Getenv("CUBE_PORT"))
+	host := os.Getenv("CUBE_WORKER_HOST")
+	port, err := strconv.Atoi(os.Getenv("CUBE_WORKER_PORT"))
 	if err != nil {
-		logger.Printf("failed to parse CUBE_PORT: %v", err)
+		logger.Printf("failed to parse CUBE_WORKER_PORT: %v", err)
 		os.Exit(1)
 		return
 	}
@@ -40,6 +42,8 @@ func main() {
 		Logger:  logger,
 	}
 
+	workerAPI.Start()
+
 	client := http.Client{
 		Timeout: time.Second * 30,
 	}
@@ -47,32 +51,36 @@ func main() {
 	workers := []string{
 		fmt.Sprintf("%s:%d", host, port),
 	}
+
 	mgr, err := manager.NewManager(logger, &client, workers)
 	if err != nil {
 		logger.Printf("error creating a new manager: %v", err)
 		os.Exit(1)
 	}
 
-	go runTasks(context.TODO(), logger, w)
+	mgrHost := os.Getenv("CUBE_MANAGER_HOST")
+	mgrPort, err := strconv.Atoi(os.Getenv("CUBE_MANAGER_PORT"))
+	if err != nil {
+		logger.Printf("failed to parse CUBE_MANAGER_PORT: %v", err)
+		os.Exit(1)
+		return
+	}
+	mgrAPI, err := manager.NewApi(logger, mgr, mgrHost, mgrPort)
+	if err != nil {
+		logger.Printf("failed to create new api for the manager: %v\n", err)
+		os.Exit(0)
+	}
+
+	mgrAPI.Start()
+
+	go w.RunTasks(context.TODO(), logger)
 	go w.CollectStats()
 	go mgr.UpdateTasks()
+	go mgr.ProcessTasks()
 
-	workerAPI.Start()
-}
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
+	sig := <-shutdown
 
-func runTasks(ctx context.Context, logger *log.Logger, w *worker.Worker) {
-	const sleep = time.Second * 10
-
-	for {
-		if w.Queue.Len() == 0 {
-			logger.Println("no available tasks to run, sleeping for 10 seconds")
-			time.Sleep(sleep)
-			continue
-		}
-
-		result := w.RunTask(ctx)
-		if result.Error != nil {
-			logger.Printf("error running tasks: %v\n", result.Error)
-		}
-	}
+	logger.Printf("shutdown signal received: %v", sig)
 }

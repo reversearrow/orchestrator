@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	url2 "net/url"
+	"time"
 
 	"github.com/golang-collections/collections/queue"
 	"github.com/google/uuid"
@@ -66,7 +67,7 @@ func (m *Manager) AddTasks(te task.TaskEvent) {
 }
 
 func (m *Manager) SelectWorker() string {
-	if m.LastWorker == len(m.Workers) {
+	if m.LastWorker == len(m.Workers)-1 {
 		m.LastWorker = 0
 		return m.Workers[m.LastWorker]
 	}
@@ -75,7 +76,7 @@ func (m *Manager) SelectWorker() string {
 	return m.Workers[m.LastWorker]
 }
 
-func (m *Manager) UpdateTasks() {
+func (m *Manager) updateTasks() {
 	for _, w := range m.Workers {
 		m.Logger.Printf("checking worker: %v for the task updates", w)
 
@@ -83,13 +84,12 @@ func (m *Manager) UpdateTasks() {
 		if err != nil {
 			m.Logger.Printf("error making a request: %v\n", err)
 		}
-
 		if resp.StatusCode != http.StatusOK {
 			m.Logger.Printf("error fetching tasks, resp code: %v\n", resp.StatusCode)
 			continue
 		}
 		var te []*task.Task
-		if err := json.NewDecoder(resp.Body).Decode(te); err != nil {
+		if err := json.NewDecoder(resp.Body).Decode(&te); err != nil {
 			log.Printf("error decoding tasks: %v\n", err)
 			continue
 		}
@@ -168,8 +168,36 @@ func (m *Manager) SendWork() {
 	t = task.Task{}
 	err = d.Decode(&t)
 	if err != nil {
-		fmt.Println("error decoding response: %s\n", err.Error())
+		fmt.Printf("error decoding response: %s\n", err.Error())
 		return
 	}
 	m.Logger.Printf("%#v\n", t)
+}
+
+func (m *Manager) GetAllTasks() []*task.Task {
+	tasks := make([]*task.Task, 0, len(m.TaskDb))
+	for _, t := range m.TaskDb {
+		tasks = append(tasks, t)
+	}
+
+	return tasks
+}
+
+func (m *Manager) UpdateTasks() {
+	for {
+		m.Logger.Println("checking for task updates from workers")
+		m.updateTasks()
+		m.Logger.Printf("task updates completed")
+		m.Logger.Printf("sleeping for 10 seconds")
+		time.Sleep(10 * time.Second)
+	}
+}
+
+func (m *Manager) ProcessTasks() {
+	for {
+		m.Logger.Println("processing tasks in the queue")
+		m.SendWork()
+		m.Logger.Println("sleeping for 10 seconds")
+		time.Sleep(10 * time.Second)
+	}
 }

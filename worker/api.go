@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -20,6 +17,37 @@ type Api struct {
 	Worker  *Worker
 	Router  *chi.Mux
 	Logger  *log.Logger
+}
+
+func NewAPI(address string, port int, worker *Worker, logger *log.Logger) (*Api, error) {
+	a := &Api{
+		Address: address,
+		Port:    port,
+		Worker:  worker,
+		Logger:  logger,
+	}
+
+	return a, a.validate()
+}
+
+func (a *Api) validate() error {
+	if a.Address == "" {
+		return fmt.Errorf("invalid manager address")
+	}
+
+	if a.Port == 0 {
+		return fmt.Errorf("invalid port")
+	}
+
+	if a.Worker == nil {
+		return fmt.Errorf("worker is nil")
+	}
+
+	if a.Logger == nil {
+		return fmt.Errorf("logger is nil")
+	}
+
+	return nil
 }
 
 type ErrorResponse struct {
@@ -110,7 +138,7 @@ func (a *Api) initRouter() {
 
 func (a *Api) Start() {
 	a.initRouter()
-	a.Logger.Printf("attempting to start the server: %s:%d\n", a.Address, a.Port)
+	a.Logger.Printf("attempting to start the worker: %s:%d\n", a.Address, a.Port)
 
 	go func() {
 		if err := http.ListenAndServe(fmt.Sprintf("%s:%d", a.Address, a.Port), a.Router); err != nil {
@@ -119,9 +147,4 @@ func (a *Api) Start() {
 	}()
 
 	a.Logger.Printf("server started on %s:%d\n", a.Address, a.Port)
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
-	sig := <-shutdown
-
-	a.Logger.Printf("shutdown signal received: %v", sig)
 }
