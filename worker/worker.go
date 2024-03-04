@@ -82,7 +82,7 @@ func (w *Worker) runTask(ctx context.Context) task.Result {
 			result.Error = errors.New("we should not get here")
 		}
 	} else {
-		result.Error = fmt.Errorf("invalid transition from %q to %q", taskPersisted.State, taskQueued.State)
+		result.Error = fmt.Errorf("invalid transition from %v to %v", taskPersisted.State, taskQueued.State)
 	}
 
 	return result

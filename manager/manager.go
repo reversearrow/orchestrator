@@ -137,7 +137,7 @@ func (m *Manager) SendWork() {
 
 	data, err := json.Marshal(taskEvent)
 	if err != nil {
-		log.Printf("unable to send marshal task object: %v.\n", taskEvent)
+		m.Logger.Printf("unable to send marshal task object: %v.\n", taskEvent)
 		return
 	}
 
@@ -148,7 +148,7 @@ func (m *Manager) SendWork() {
 	}
 	resp, err := m.client.Post(u.String(), "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		log.Printf("error connecting to url: %q, err: %v\n.", u.String(), err)
+		m.Logger.Printf("error connecting to url: %q, err: %v\n.", u.String(), err)
 		m.AddTasks(taskEvent)
 		return
 	}
@@ -161,14 +161,14 @@ func (m *Manager) SendWork() {
 			m.Logger.Printf("error decoding: %v", err)
 			return
 		}
-		log.Printf("response error (%d): %s", e.HTTPStatusCode, e.Message)
+		m.Logger.Printf("response error (%d): %s", e.HTTPStatusCode, e.Message)
 		return
 	}
 
 	t = task.Task{}
 	err = d.Decode(&t)
 	if err != nil {
-		fmt.Printf("error decoding response: %s\n", err.Error())
+		m.Logger.Printf("error decoding response: %s\n", err.Error())
 		return
 	}
 	m.Logger.Printf("%#v\n", t)
