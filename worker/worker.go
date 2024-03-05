@@ -138,7 +138,6 @@ func (w *Worker) GetTasks() []*task.Task {
 	return tasks
 }
 
-// RunTasks runs tasks
 func (w *Worker) RunTasks(ctx context.Context, logger *log.Logger) {
 	const sleep = time.Second * 10
 
