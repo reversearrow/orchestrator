@@ -178,3 +178,21 @@ func (d *Docker) Stop(ctx context.Context, id string) task.Result {
 		Error:  nil,
 	}
 }
+
+func (d *Docker) Inspect(ctx context.Context, containerID string) InspectResponse {
+	resp, err := d.Client.ContainerInspect(ctx, containerID)
+	if err != nil {
+		return InspectResponse{
+			Error: err,
+		}
+	}
+
+	return InspectResponse{
+		Container: &resp,
+	}
+}
+
+type InspectResponse struct {
+	Error     error
+	Container *types.ContainerJSON
+}

@@ -154,3 +154,28 @@ func (w *Worker) RunTasks(ctx context.Context, logger *log.Logger) {
 		}
 	}
 }
+
+func (w *Worker) InspectTask(ctx context.Context, t task.Task) docker.InspectResponse {
+	cfg := docker.NewConfig(&t)
+	d, err := docker.NewDocker(cfg)
+	if err != nil {
+		return docker.InspectResponse{
+			Error: fmt.Errorf("error creating a new docker instance: %w", err),
+		}
+	}
+	return d.Inspect(ctx, t.ContainerID)
+}
+
+func (w *Worker) updateTasks() {
+	for
+}
+
+func (w *Worker) UpdateTasks() {
+	for {
+		w.Logger.Println("checking status of tasks")
+		w.Logger.Println("task updates completed")
+		w.updateTasks()
+		w.Logger.Println("sleeping for 15 seconds")
+		time.Sleep(15 * time.Second)
+	}
+}
